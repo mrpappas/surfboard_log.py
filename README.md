@@ -60,7 +60,7 @@ The page you are aiming for looks like this:
 
 ![Alt text](https://s30.postimg.org/76e7gd5kh/4034_signal.png "Your page should look like this")
 
-Signal thresholds are measured in **dB** (decibels) or **dBmV** (decibel millivolts) are adjusted throughout their _high or _low variables, example:  
+Signal thresholds are measured in **dB** (decibels) or **dBmV** (decibel millivolts) are adjusted through their _high or _low variables, example:  
 
     downstream_high = 15  
     downstream_low = -15  
