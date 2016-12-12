@@ -1,4 +1,4 @@
-import re, itertools, urllib.request, datetime
+import re, urllib.request, datetime
 from bs4 import BeautifulSoup
 
 ## set modem's IP Address
@@ -6,14 +6,16 @@ ip = 'http://192.168.100.1/cmSignalData.htm'
 
 date = ('Data logged: {:%Y-%b-%d %H:%M:%S}'.format(datetime.datetime.now()))
 
+dashed_line = '--------------------------------------------\n'
+
 ## adjust signal level tolerance - if not high set to 100
 
-downstream_high = 15
-downstream_low = -15
-upstream_high = 55
+downstream_high = 10
+downstream_low = -10
+upstream_high = 53
 upstream_low = 37
 snr_high = 100
-snr_low = 30
+snr_low = 32
 
 class Scraper:
 
@@ -30,11 +32,11 @@ class Scraper:
     def check_limits(results, high, low, target):
         for result in results[1:]:
             if result <= low:
-                target.append(results[0] + ' ' + str(result) + ' dBmV -- WARNING TOO LOW MINIMUM LEVEL: ' + str(low))
+                target.append(results[0] + ' ' + str(result) + ' dB(mV) -- WARNING TOO LOW MINIMUM LEVEL: ' + str(low))
             elif result >= high:
-                target.append(results[0] + ' ' + str(result) + ' dB -- WARNING TOO HIGH MAXIMUM LEVEL: ' + str(high))
+                target.append(results[0] + ' ' + str(result) + ' dB(mV) -- WARNING TOO HIGH MAXIMUM LEVEL: ' + str(high))
             else:
-                target.append(results[0] + ' ' + str(result) + ' DBmV -- in spec')
+                target.append(results[0] + ' ' + str(result) + ' dB(mV) -- in spec')
 
     def get_errors(unerrored, uncorrected, corrected, store):
         percentage = unerrored / (unerrored + uncorrected + corrected)
@@ -47,7 +49,7 @@ class Scraper:
             f.write('--  ' + title + '  --\n')
             for entry in entries:
                 f.write('Channel ' + str(entry[1]) + ' : ' + str(entry[0]) + '\n')
-            f.write('--------------------------------------------\n')
+            f.write(dashed_line)
 
 
 
@@ -108,11 +110,11 @@ try:
 
         ##Check results are within specs then write to .log
         with open("modem.log", "a") as f:
-            f.write('--------------------------------------------\n')
-            f.write('--------------------------------------------\n')
+            f.write(dashed_line)
+            f.write(dashed_line)
             f.write('-- ' + date + ' --\n')
-            f.write('--------------------------------------------\n')
-            f.write('--------------------------------------------\n')
+            f.write(dashed_line)
+            f.write(dashed_line)
 
         scraper.check_limits(downstream, downstream_high, downstream_low, down)
         down = list(zip(down, down_channels[1:]))
@@ -137,9 +139,9 @@ try:
         with open("modem.log", "a") as f:
             f.write('-- Error Correction --\n')
             f.write(errors[0] + '\n')
-            f.write('--------------------------------------------\n')
+            f.write(dashed_line)
 except:
     with open("modem.log", "a") as f:
-        f.write('--------------------------------------------\n')
+        f.write(dashed_line)
         f.write('--Something went wrong ' + date + ' --\n')
-        f.write('--------------------------------------------\n')
+        f.write(dashed_line)

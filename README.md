@@ -54,21 +54,21 @@ Script I wrote to scrape the pertinent data from my modem's web portal.  The mod
 
 ##### Config:  
 Modem.log is created automatically and is by default stored in the same directory.  
-Set IP variable to your modem's IP, the default on my model was http://192.168.100.1/cmSignal.htm  
-If you need to change the IP ensure you include the suffix `/cmSignal.htm`  
+Set IP variable to your modem's IP, the default on my model was http://192.168.100.1/cmSignalData.htm  
+If you need to change the IP ensure you include the suffix `/cmSignalData.htm`  
 The page you are aiming for looks like this:  
 
 ![Alt text](https://s30.postimg.org/76e7gd5kh/4034_signal.png "Your page should look like this")
 
 Signal thresholds are measured in **dB** (decibels) or **dBmV** (decibel millivolts) are adjusted throughout their _high or _low variables, example:  
 
-    downstream_high = 15  
-    downstream_low = -15  
+    downstream_high = 10  
+    downstream_low = -10  
 
-The default values are industry standards but your provider may have different tolerances.  
+The default values are fairly standard but your provider may have different tolerances.  
 
 ## Usage:  
-I set it as a cron job and have it run every 30 minutes.  
+I set it as a cron job and have it run every 20 minutes.  
 0,30 * * * * python3 ~/surfboard_log.py
 
 ## Support:  
