@@ -92,20 +92,20 @@ try:
 
                     elif check == 'Channel ID':
                         if len(td) == 9:
-                            if len(down_channels) < 5:
+                            if len(down_channels) < 9:
                                 scraper.set_data(down_channels, 1)
                                 print(down_channels)
                         elif len(td) == 5:
                             scraper.set_data(up_channels, 1)
 
                     elif check == 'Total Unerrored Codewords':
-                        scraper.set_data(unerrored, 2)
+                        scraper.set_data(unerrored, 1)
 
                     elif check == 'Total Correctable Codewords':
-                        scraper.set_data(correctable, 2)
+                        scraper.set_data(correctable, 1)
 
                     elif check == 'Total Uncorrectable Codewords':
-                        scraper.set_data(uncorrectable, 2)
+                        scraper.set_data(uncorrectable, 1)
 
 
         ##Check results are within specs then write to .log
