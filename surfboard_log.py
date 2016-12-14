@@ -17,19 +17,19 @@ upstream_low = 37
 snr_high = 100
 snr_low = 32
 
-class Scraper:
+class Scraper(object):
 
-    def set_data(target, start):
-        for data in td[start:]:
+    def set_data(self, target, start):
+        for data in self.td[start:]:
             rawData = data.string
             finishedData = int(re.sub("[^-?\d+(\.\d+)?$]", "", rawData))
             target.append(finishedData)
 
-    def get_average(data):
+    def get_average(self, data):
         average = sum(data[1:]) / len(data)
         return average
 
-    def check_limits(results, high, low, target):
+    def check_limits(self, results, high, low, target):
         for result in results[1:]:
             if result <= low:
                 target.append(results[0] + ' ' + str(result) + ' dB(mV) -- WARNING TOO LOW MINIMUM LEVEL: ' + str(low))
@@ -38,12 +38,12 @@ class Scraper:
             else:
                 target.append(results[0] + ' ' + str(result) + ' dB(mV) -- in spec')
 
-    def get_errors(unerrored, uncorrected, corrected, store):
+    def get_errors(self, unerrored, uncorrected, corrected, store):
         percentage = unerrored / (unerrored + uncorrected + corrected)
         percentage = percentage * 100
         errors.append(str(percentage) + ' % Unerrored Codewords')
 
-    def write_to_log(entries, title):
+    def write_to_log(self, entries, title):
         with open("modem.log", "a") as f:
             title = title
             f.write('--  ' + title + '  --\n')
@@ -53,95 +53,106 @@ class Scraper:
 
 
 
-try:
-    with urllib.request.urlopen(ip) as f:
+    def parse_page(self):
+        with urllib.request.urlopen(ip) as f:
+            soup = BeautifulSoup(f, 'html.parser')
+            tables = soup.findAll('table')
 
-        soup = BeautifulSoup(f, 'html.parser')
-        tables = soup.findAll('table')
+            self.snr = ['Signal to Noise Ratio']
+            self.downstream = ['Downstream Signal']
+            self.upstream = ['Upstream Signal']
+            self.up_channels = ['Upstream Channel']
+            self.down_channels = ['Downstream Channel']
+            self.unerrored = ['Unerrored Codewords']
+            self.correctable = ['Corrected']
+            self.uncorrectable = ['Uncorrected']
 
-        snr = ['Signal to Noise Ratio']
-        downstream = ['Downstream Signal']
-        upstream = ['Upstream Signal']
-        up_channels = ['Upstream Channel']
-        down_channels = ['Downstream Channel']
-        unerrored = ['Unerrored Codewords']
-        correctable = ['Corrected']
-        uncorrectable = ['Uncorrected']
+            self.down = []
+            self.up = []
+            self.noise = []
 
-        down = []
-        up = []
-        noise = []
+            for table in tables:
+                rows = table.findAll('tr')
+                for tr in rows:
+                    self.td = tr.findAll('td')
+                    for data in self.td:
+                        check = data.string
 
-        scraper = Scraper
+                        if check == 'Signal to Noise Ratio':
+                            self.set_data(self.snr, 1)
 
-        for table in tables:
-            rows = table.findAll('tr')
-            for tr in rows:
-                td = tr.findAll('td')
-                for data in td:
-                    check = data.string
+                        elif data.has_attr('align'):
+                            self.set_data(self.downstream, 2)
 
-                    if check == 'Signal to Noise Ratio':
-                        scraper.set_data(snr, 1)
+                        elif check == 'Power Level':
+                            self.set_data(self.upstream, 1)
 
-                    elif data.has_attr('align'):
-                        scraper.set_data(downstream, 2)
+                        elif check == 'Channel ID':
+                            if len(self.td) == 9:
+                                if len(self.down_channels) < 9:
+                                    self.set_data(self.down_channels, 1)
+                                    print(self.down_channels)
+                            elif len(self.td) == 5:
+                                self.set_data(self.up_channels, 1)
 
-                    elif check == 'Power Level':
-                        scraper.set_data(upstream, 1)
+                        elif check == 'Total Unerrored Codewords':
+                            self.set_data(self.unerrored, 1)
 
-                    elif check == 'Channel ID':
-                        if len(td) == 9:
-                            if len(down_channels) < 9:
-                                scraper.set_data(down_channels, 1)
-                                print(down_channels)
-                        elif len(td) == 5:
-                            scraper.set_data(up_channels, 1)
+                        elif check == 'Total Correctable Codewords':
+                            self.set_data(self.correctable, 1)
 
-                    elif check == 'Total Unerrored Codewords':
-                        scraper.set_data(unerrored, 1)
-
-                    elif check == 'Total Correctable Codewords':
-                        scraper.set_data(correctable, 1)
-
-                    elif check == 'Total Uncorrectable Codewords':
-                        scraper.set_data(uncorrectable, 1)
+                        elif check == 'Total Uncorrectable Codewords':
+                            self.set_data(self.uncorrectable, 1)
 
 
-        ##Check results are within specs then write to .log
-        with open("modem.log", "a") as f:
-            f.write(dashed_line)
-            f.write(dashed_line)
-            f.write('-- ' + date + ' --\n')
-            f.write(dashed_line)
-            f.write(dashed_line)
+            with open("modem.log", "a") as f:
+                f.write(dashed_line)
+                f.write(dashed_line)
+                f.write('-- ' + date + ' --\n')
+                f.write(dashed_line)
+                f.write(dashed_line)
 
-        scraper.check_limits(downstream, downstream_high, downstream_low, down)
-        down = list(zip(down, down_channels[1:]))
-        scraper.write_to_log(down, str(downstream[0]))
+if __name__ == "__main__":
+
+    scraper = Scraper()
+    scraper.parse_page()
+
+    downstream = scraper.downstream
+    upstream = scraper.upstream
+
+    down = scraper.down
+    up = scraper.up
+
+    down_channels = scraper.down_channels
+    up_channels = scraper.up_channels
+
+    snr = scraper.snr
+    noise = scraper.noise
+    unerrored = scraper.unerrored
+    correctable = scraper.correctable
+    uncorrectable = scraper.uncorrectable
+
+    scraper.check_limits(downstream, downstream_high, downstream_low, down)
+    down = list(zip(down, down_channels[1:]))
+    scraper.write_to_log(down, str(downstream[0]))
 
 
-        scraper.check_limits(upstream, upstream_high, upstream_low, up)
-        up = list(zip(up, up_channels[1:]))
-        scraper.write_to_log(up, str(upstream[0]))
+    scraper.check_limits(upstream, upstream_high, upstream_low, up)
+    up = list(zip(up, up_channels[1:]))
+    scraper.write_to_log(up, str(upstream[0]))
 
 
-        scraper.check_limits(snr, snr_high, snr_low, noise)
-        noise = list(zip(noise, down_channels[1:]))
-        scraper.write_to_log(noise, str(snr[0]))
+    scraper.check_limits(snr, snr_high, snr_low, noise)
+    noise = list(zip(noise, down_channels[1:]))
+    scraper.write_to_log(noise, str(snr[0]))
 
-        unerrored = scraper.get_average(unerrored)
-        correctable = scraper.get_average(correctable)
-        uncorrectable = scraper.get_average(uncorrectable)
+    unerrored = scraper.get_average(unerrored)
+    correctable = scraper.get_average(correctable)
+    uncorrectable = scraper.get_average(uncorrectable)
 
-        errors= []
-        scraper.get_errors(unerrored, correctable, uncorrectable, errors)
-        with open("modem.log", "a") as f:
-            f.write('-- Error Correction --\n')
-            f.write(errors[0] + '\n')
-            f.write(dashed_line)
-except:
+    errors= []
+    scraper.get_errors(unerrored, correctable, uncorrectable, errors)
     with open("modem.log", "a") as f:
-        f.write(dashed_line)
-        f.write('--Something went wrong ' + date + ' --\n')
+        f.write('-- Error Correction --\n')
+        f.write(errors[0] + '\n')
         f.write(dashed_line)
